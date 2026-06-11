@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>批次三角定位工具</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Turf.js -->
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
+  <!-- geomag.js (WMM2025 magnetic declination, self-hosted) -->
+  <script src="js/geomag.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/batch.css">
+</head>
+<body>
+
+<!-- ── Map (left, fills remaining width) ──────────────────────────── -->
+<div id="map"></div>
+
+<!-- ── Right panel ────────────────────────────────────────────────── -->
+<div id="panel">
+
+  <!-- App header -->
+  <div id="app-header">
+    <div id="app-title">批次三角定位工具</div>
+    <div id="app-version">CSV 批次版 · v0.1</div>
+  </div>
+
+  <!-- Error banner -->
+  <div id="error-banner" hidden></div>
+
+  <!-- ① CSV 上傳 -->
+  <div class="section">
+    <div class="section-title">CSV 上傳</div>
+    <div id="dropzone">
+      <div class="dz-icon">⬆</div>
+      <div class="dz-main">拖放或選擇 CSV</div>
+      <div class="dz-hint">只讀 group, lat, lon, azimuth，若需計算磁北，請加入 date 欄位，其餘欄位忽略但保留於輸出。</div>
+      <div class="dz-actions">
+        <button id="btn-choose" class="btn-action">選擇檔案</button>
+        <button id="btn-sample" class="btn-action">下載範例</button>
+      </div>
+      <input type="file" id="file-input" accept=".csv,text/csv" hidden>
+    </div>
+    <div id="upload-status" class="inline-note" hidden></div>
+  </div>
+
+  <!-- ② 全域設定 -->
+  <div class="section" id="global-settings">
+    <div class="section-title">全域設定（套用所有組）</div>
+    <div class="control-row">
+      <div class="radio-group">
+        <button id="btn-north-true"     class="radio-btn active">真北</button>
+        <button id="btn-north-magnetic" class="radio-btn">磁北</button>
+      </div>
+    </div>
+    <div id="date-label" class="date-row" hidden>
+      <div class="radio-group">
+        <button id="btn-date-csv"    class="radio-btn">CSV 日期</button>
+        <button id="btn-date-custom" class="radio-btn active">自訂日期</button>
+      </div>
+      <input type="date" id="date-input">
+    </div>
+    <div class="algo-row">
+      <div>
+        <div class="sub-label">交會算法</div>
+        <div class="radio-group">
+          <button id="btn-line-planar"   class="radio-btn active">平面</button>
+          <button id="btn-line-geodesic" class="radio-btn">Geodesic</button>
+        </div>
+      </div>
+      <div>
+        <div class="sub-label">估算器</div>
+        <div class="radio-group">
+          <button id="btn-est-centroid" class="radio-btn active">Centroid</button>
+          <button id="btn-est-mle"      class="radio-btn">MLE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 定位組圖例 -->
+  <div class="section" id="legend-section">
+    <div class="legend-header">
+      <span class="section-title">定位組（依 group）</span>
+      <span id="legend-actions" hidden>
+        <button id="btn-select-all" class="link-btn">全選</button>
+        <button id="btn-deselect-all" class="link-btn">全取消</button>
+        <button id="btn-deselect-empty" class="link-btn">取消無交會點</button>
+      </span>
+    </div>
+    <div id="legend-list"></div>
+    <div id="legend-empty" class="inline-note">尚未上傳資料</div>
+  </div>
+
+  <!-- ④ 下載結果 -->
+  <div class="section" id="download-section" hidden>
+    <button id="btn-download" class="btn-download-main">⬇ 下載結果 CSV</button>
+    <button id="btn-clear-data" class="btn-clear-main">🗑 清空資料</button>
+  </div>
+
+  <!-- ⑤ 使用說明 -->
+  <div class="section" id="help-section">
+    <button id="help-toggle" class="link-btn">❓ 使用說明 ▶</button>
+    <dl id="help-body" hidden>
+      <dt>CSV 格式</dt>
+      <dd>每列一個觀測站，固定讀取 <code>group, lat, lon, azimuth</code> 四欄（表頭大小寫、空白不限）；若需計算磁北請加入 <code>date</code> 欄。其餘欄位忽略但保留於輸出。同一 group 的多列構成一個定位組（≥ 2 站才能定位）。</dd>
+      <dt>真北 / 磁北</dt>
+      <dd>方位角基準。選磁北時系統依各站座標自動換算磁偏角為真北，並可選日期來源：「CSV 日期」逐列讀 <code>date</code> 欄（缺漏時退回今天）；「自訂日期」用右側日期欄套用全部（此時才顯示日期欄）。</dd>
+      <dt>平面 / Geodesic</dt>
+      <dd>平面：緯經視為 XY，速度快，＜100 km 誤差小。Geodesic：球面大圓交會，長距離更準確。</dd>
+      <dt>Centroid / MLE</dt>
+      <dd>Centroid：兩兩交點平均。MLE：對方位誤差加權，精度較高。</dd>
+      <dt>最小銳角</dt>
+      <dd>兩方位線夾角，建議 ＞30°；過小時定位誤差急遽放大。</dd>
+      <dt>圖例與勾選</dt>
+      <dd>各組預設全部勾選（含無交點組）。可用「全選」勾回全部、「取消無交會點」一次取消所有無交點組。取消勾選的組不繪製於地圖；點圖例列可縮放至該組。</dd>
+      <dt>忽略與無交點</dt>
+      <dd>組內若有方位線與其他線都不交會，會自動忽略該站、用其餘有效交點定位，圖例以紅字標示「忽略 N」。整組都無有效交會（含不足 2 站）則列為「無交點」（仍可勾選顯示其方位線）。</dd>
+      <dt>輸出 CSV</dt>
+      <dd>原始欄位順序原樣保留（<code>note</code>／<code>notes</code> 欄除外，不輸出），於最後附加 <code>tri_lat, tri_long, tri_status</code>；若原檔已有同名欄則改用 <code>tri_lat_1</code> 等後綴、保留原欄。狀態為 OK／忽略：無交點／無交點／資料無效。</dd>
+    </dl>
+  </div>
+
+  <div class="panel-spacer"></div>
+</div>
+
+<!-- App scripts -->
+<script src="js/core.js"></script>
+<script src="js/magnetic.js"></script>
+<script src="js/map.js"></script>
+<script src="js/batch-main.js"></script>
+
+</body>
+</html>

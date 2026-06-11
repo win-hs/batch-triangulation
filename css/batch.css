@@ -1,0 +1,134 @@
+/* 批次三角定位工具 — batch.css — additions on top of style.css */
+
+/* ── Upload dropzone ─────────────────────────────────────────────── */
+#dropzone {
+  border: 1.5px dashed #bbb;
+  border-radius: 8px;
+  background: #fafafa;
+  padding: 16px 12px;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+#dropzone.dragover {
+  border-color: #4e79a7;
+  background: #eef3f9;
+}
+
+.dz-icon { font-size: 22px; color: #888; line-height: 1; }
+.dz-main { font-size: 14px; color: #444; margin-top: 4px; }
+.dz-hint { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+.dz-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* ── Legend ──────────────────────────────────────────────────────── */
+.legend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#legend-actions {
+  display: flex;
+  gap: 10px;
+}
+
+#legend-actions .link-btn { font-size: 12px; }
+
+#legend-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+  border-top: 1px solid #eee;
+  cursor: pointer;
+}
+
+.legend-row:hover { background: #f6f8fa; }
+
+.legend-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.legend-body { min-width: 0; flex: 1; }
+
+.legend-name { font-size: 13px; color: #222; }
+
+.legend-detail {
+  font-size: 11px;
+  color: #777;
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legend-detail.warn    { color: #b06000; }
+.legend-detail.partial { color: #c00; }
+.legend-detail.danger  { color: #c00; font-family: system-ui, sans-serif; }
+
+/* ── Compact global-setting toggles ──────────────────────────────── */
+#global-settings .radio-btn {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+#global-settings .sub-label { font-size: 10px; }
+#global-settings #date-input { font-size: 12px; }
+
+/* ── Download / clear buttons ────────────────────────────────────── */
+#download-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-download-main {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 6px;
+  background: #2f6db0;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-download-main:hover { background: #255a93; }
+
+.btn-clear-main {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #d33;
+  border-radius: 6px;
+  background: #fff;
+  color: #c00;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-clear-main:hover { background: #ffecec; }
