@@ -78,44 +78,126 @@ function parseCSV(text) {
   return rows.filter(r => !(r.length === 1 && r[0].trim() === ''));
 }
 
-function findColumns(header) {
-  const norm = header.map(h => h.trim().toLowerCase());
-  const idx = {
-    group: norm.indexOf('group'),
-    lat: norm.indexOf('lat'),
-    lon: norm.indexOf('lon'),
-    azimuth: norm.indexOf('azimuth'),
-  };
-  const missing = Object.keys(idx).filter(k => idx[k] === -1);
-  if (missing.length) {
-    throw new Error(`CSV 缺少必要欄位：${missing.join(', ')}（需要 group, lat, lon, azimuth）`);
-  }
-  idx.date = norm.indexOf('date'); // optional, -1 if absent
-  return idx;
-}
-
 function validDate(str) {
   if (!str) return null;
   const d = new Date(str.trim());
   return isNaN(d.getTime()) ? null : str.trim();
 }
 
-// ── Load & build groups ────────────────────────────────────────────────────
+// ── Column-mapping modal ───────────────────────────────────────────────────
+const mappingModal   = document.getElementById('mapping-modal');
+const mappingPreview = document.getElementById('mapping-preview');
+const mappingError   = document.getElementById('mapping-error');
+const selGroup   = document.getElementById('map-col-group');
+const selLat     = document.getElementById('map-col-lat');
+const selLon     = document.getElementById('map-col-lon');
+const selAzimuth = document.getElementById('map-col-azimuth');
+const selDate    = document.getElementById('map-col-date');
+
+const COLUMN_SYNONYMS = {
+  group:   ['group', 'groups', 'g', '組', '組別', '定位組'],
+  lat:     ['lat', 'latitude', '緯度', '緯'],
+  lon:     ['lon', 'lng', 'long', 'longitude', '經度', '經'],
+  azimuth: ['azimuth', 'az', 'bearing', '方位', '方位角'],
+  date:    ['date', 'datetime', '日期', '時間'],
+};
+
+// Best-guess column index for a field, or -1 if no name matches.
+function guessColumn(header, key) {
+  const norm = header.map(h => h.trim().toLowerCase());
+  for (const syn of COLUMN_SYNONYMS[key]) {
+    const i = norm.indexOf(syn);
+    if (i !== -1) return i;
+  }
+  return -1;
+}
+
+function fillSelect(sel, header, includeNone, guessIdx) {
+  sel.innerHTML = '';
+  const first = document.createElement('option');
+  first.value = includeNone ? '-1' : '';
+  first.textContent = includeNone ? '（無）' : '請選擇';
+  sel.appendChild(first);
+  header.forEach((h, i) => {
+    const o = document.createElement('option');
+    o.value = String(i);
+    o.textContent = h.trim() === '' ? `（欄 ${i + 1}）` : h;
+    sel.appendChild(o);
+  });
+  sel.value = guessIdx === -1 ? (includeNone ? '-1' : '') : String(guessIdx);
+}
+
+function openMappingModal() {
+  const header = state.rawHeader;
+  fillSelect(selGroup,   header, false, guessColumn(header, 'group'));
+  fillSelect(selLat,     header, false, guessColumn(header, 'lat'));
+  fillSelect(selLon,     header, false, guessColumn(header, 'lon'));
+  fillSelect(selAzimuth, header, false, guessColumn(header, 'azimuth'));
+  fillSelect(selDate,    header, true,  guessColumn(header, 'date'));
+
+  const rows = state.rawRows.slice(0, 10);
+  let html = '<table><thead><tr>';
+  header.forEach(h => { html += `<th>${escapeHtml(h)}</th>`; });
+  html += '</tr></thead><tbody>';
+  rows.forEach(r => {
+    html += '<tr>';
+    header.forEach((_, i) => { html += `<td>${escapeHtml(r[i] == null ? '' : r[i])}</td>`; });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  mappingPreview.innerHTML = html;
+
+  mappingError.hidden = true;
+  mappingModal.hidden = false;
+}
+
+document.getElementById('mapping-cancel').addEventListener('click', () => {
+  mappingModal.hidden = true;
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !mappingModal.hidden) mappingModal.hidden = true;
+});
+
+document.getElementById('mapping-confirm').addEventListener('click', () => {
+  const g = selGroup.value, la = selLat.value, lo = selLon.value, az = selAzimuth.value;
+  if (g === '' || la === '' || lo === '' || az === '') {
+    mappingError.textContent = '請為 group、lat、lon、azimuth 都選擇欄位';
+    mappingError.hidden = false;
+    return;
+  }
+  const picks = [g, la, lo, az].map(Number);
+  if (new Set(picks).size !== picks.length) {
+    mappingError.textContent = 'group、lat、lon、azimuth 不可選到同一欄';
+    mappingError.hidden = false;
+    return;
+  }
+  state.colIdx = {
+    group: Number(g), lat: Number(la), lon: Number(lo),
+    azimuth: Number(az), date: Number(selDate.value),
+  };
+  mappingModal.hidden = true;
+  applyMapping();
+});
+
+// ── Load CSV → preview & column mapping ─────────────────────────────────────
 function loadCSV(text) {
   hideError();
   let rows;
   try {
     rows = parseCSV(text);
     if (rows.length < 2) throw new Error('CSV 沒有資料列');
-    state.colIdx = findColumns(rows[0]);
   } catch (e) {
     showError(e.message);
     return;
   }
-
   state.rawHeader = rows[0];
   state.rawRows = rows.slice(1);
+  openMappingModal();
+}
 
+// ── Build groups from the chosen column mapping & render ─────────────────────
+function applyMapping() {
   const { group: gi, lat: li, lon: oi, azimuth: ai, date: di } = state.colIdx;
   const byName = new Map();
   state.rawRows.forEach((r, rowIndex) => {
@@ -469,21 +551,13 @@ document.getElementById('btn-download').addEventListener('click', () => {
     }
   }
 
-  // Exclude note/notes columns from the output
-  const dropIdx = new Set();
-  state.rawHeader.forEach((h, i) => {
-    const n = h.trim().toLowerCase();
-    if (n === 'note' || n === 'notes') dropIdx.add(i);
-  });
-  const keptHeader = state.rawHeader.filter((_, i) => !dropIdx.has(i));
-
-  const taken = new Set(keptHeader.map(h => h.trim().toLowerCase()));
+  const taken = new Set(state.rawHeader.map(h => h.trim().toLowerCase()));
   const cLat = uniqueColumnName('tri_lat', taken);
   const cLong = uniqueColumnName('tri_long', taken);
   const cStatus = uniqueColumnName('tri_status', taken);
 
   const gi = state.colIdx.group;
-  const header = keptHeader.concat(cLat, cLong, cStatus);
+  const header = state.rawHeader.concat(cLat, cLong, cStatus);
   const lines = [header.map(escapeCSV).join(',')];
 
   state.rawRows.forEach((r, rowIndex) => {
@@ -494,8 +568,7 @@ document.getElementById('btn-download').addEventListener('click', () => {
     } else if ((r[gi] || '').trim()) {
       status = '資料無效'; // belongs to a group but lat/lon/azimuth unparseable
     }
-    const kept = r.filter((_, i) => !dropIdx.has(i));
-    lines.push(kept.concat(lat, lon, status).map(escapeCSV).join(','));
+    lines.push(r.concat(lat, lon, status).map(escapeCSV).join(','));
   });
 
   downloadCSV('triangulation-results.csv', lines.join('\r\n') + '\r\n');

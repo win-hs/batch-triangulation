@@ -1,5 +1,97 @@
 /* 批次三角定位工具 — batch.css — additions on top of style.css */
 
+/* ── Column-mapping modal ────────────────────────────────────────── */
+#mapping-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#mapping-box {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  width: min(820px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  gap: 14px;
+}
+
+#mapping-head { display: flex; flex-direction: column; gap: 2px; }
+#mapping-title { font-size: 17px; font-weight: 700; color: #1a3a5c; }
+#mapping-sub { font-size: 12px; color: #888; }
+
+#mapping-selectors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+#mapping-selectors label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: #555;
+  gap: 3px;
+}
+
+#mapping-selectors select {
+  padding: 5px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+#mapping-preview {
+  overflow: auto;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+
+#mapping-preview table {
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#mapping-preview th, #mapping-preview td {
+  border: 1px solid #eee;
+  padding: 4px 8px;
+  text-align: left;
+}
+
+#mapping-preview th {
+  background: #f5f7fa;
+  color: #333;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+#mapping-preview td { color: #555; }
+
+#mapping-error {
+  background: #fee;
+  color: #c00;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+#mapping-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* ── Upload dropzone ─────────────────────────────────────────────── */
 #dropzone {
   border: 1.5px dashed #bbb;

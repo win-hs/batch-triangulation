@@ -41,7 +41,7 @@
     <div id="dropzone">
       <div class="dz-icon">⬆</div>
       <div class="dz-main">拖放或選擇 CSV</div>
-      <div class="dz-hint">只讀 group, lat, lon, azimuth，若需計算磁北，請加入 date 欄位，其餘欄位忽略但保留於輸出。</div>
+      <div class="dz-hint">上傳後指定對應欄位，定位組（Group）、經度（Longitude）、緯度（Latitude）、方位角（Azimuth）、日期（Date），其餘欄位忽略但保留於輸出。</div>
       <div class="dz-actions">
         <button id="btn-choose" class="btn-action">選擇檔案</button>
         <button id="btn-sample" class="btn-action">下載範例</button>
@@ -109,8 +109,8 @@
   <div class="section" id="help-section">
     <button id="help-toggle" class="link-btn">❓ 使用說明 ▶</button>
     <dl id="help-body" hidden>
-      <dt>CSV 格式</dt>
-      <dd>每列一個觀測站，固定讀取 <code>group, lat, lon, azimuth</code> 四欄（表頭大小寫、空白不限）；若需計算磁北請加入 <code>date</code> 欄。其餘欄位忽略但保留於輸出。同一 group 的多列構成一個定位組（≥ 2 站才能定位）。</dd>
+      <dt>CSV 格式與欄位對應</dt>
+      <dd>每列一個觀測站。上傳後會跳出對應畫面，預覽前 10 筆並由你指定各欄對應：定位組（Group）、經度（Longitude）、緯度（Latitude）、方位角（Azimuth）為必填，日期（Date）可選（磁北用）；同名欄會自動預選。其餘欄位忽略但保留於輸出。同一定位組的多列構成一組（≥ 2 站才能定位）。</dd>
       <dt>真北 / 磁北</dt>
       <dd>方位角基準。選磁北時系統依各站座標自動換算磁偏角為真北，並可選日期來源：「CSV 日期」逐列讀 <code>date</code> 欄（缺漏時退回今天）；「自訂日期」用右側日期欄套用全部（此時才顯示日期欄）。</dd>
       <dt>平面 / Geodesic</dt>
@@ -124,11 +124,38 @@
       <dt>忽略與無交點</dt>
       <dd>組內若有方位線與其他線都不交會，會自動忽略該站、用其餘有效交點定位，圖例以紅字標示「忽略 N」。整組都無有效交會（含不足 2 站）則列為「無交點」（仍可勾選顯示其方位線）。</dd>
       <dt>輸出 CSV</dt>
-      <dd>原始欄位順序原樣保留（<code>note</code>／<code>notes</code> 欄除外，不輸出），於最後附加 <code>tri_lat, tri_long, tri_status</code>；若原檔已有同名欄則改用 <code>tri_lat_1</code> 等後綴、保留原欄。狀態為 OK／忽略：無交點／無交點／資料無效。</dd>
+      <dd>原始欄位順序原樣保留，於最後附加 <code>tri_lat, tri_long, tri_status</code>；若原檔已有同名欄則改用 <code>tri_lat_1</code> 等後綴、保留原欄。狀態為 OK／忽略：無交點／無交點／資料無效。</dd>
     </dl>
   </div>
 
   <div class="panel-spacer"></div>
+</div>
+
+<!-- ── Column-mapping modal (covers the map) ──────────────────────── -->
+<div id="mapping-modal" hidden>
+  <div id="mapping-box">
+    <div id="mapping-head">
+      <span id="mapping-title">欄位對應</span>
+      <span id="mapping-sub">指定 CSV 各欄對應的欄位，下方為前 10 筆預覽</span>
+    </div>
+
+    <div id="mapping-selectors">
+      <label>定位組（Group）<select id="map-col-group"></select></label>
+      <label>經度（Longitude）<select id="map-col-lon"></select></label>
+      <label>緯度（Latitude）<select id="map-col-lat"></select></label>
+      <label>方位角（Azimuth）<select id="map-col-azimuth"></select></label>
+      <label>日期（Date）<select id="map-col-date"></select></label>
+    </div>
+
+    <div id="mapping-preview"></div>
+
+    <div id="mapping-error" hidden></div>
+
+    <div id="mapping-actions">
+      <button id="mapping-cancel" class="btn-secondary">取消</button>
+      <button id="mapping-confirm" class="btn-primary">確認</button>
+    </div>
+  </div>
 </div>
 
 <!-- App scripts -->
