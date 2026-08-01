@@ -26,6 +26,18 @@ const BASE_LAYERS = {
 let map = null;
 let layerControl = null;
 let overlayGroup = null;  // holds all drawn features
+// groupName -> [Leaflet layers], so clicking any feature can identify its group
+let groupLayers = new Map();
+
+/** Register a layer under a group so map clicks can resolve back to it. */
+function tagLayer(layer, groupName, infoHtml, onSelect) {
+  if (groupName == null) return layer;
+  if (!groupLayers.has(groupName)) groupLayers.set(groupName, []);
+  groupLayers.get(groupName).push(layer);
+  if (infoHtml) layer.bindPopup(infoHtml);
+  layer.on('click', () => onSelect && onSelect(groupName));
+  return layer;
+}
 
 function initMap(containerId) {
   map = L.map(containerId, {
@@ -61,14 +73,15 @@ function groupColor(index) {
 /**
  * Draw a group's observation station as a small filled dot (no label).
  */
-function drawGroupStation(lat, lon, color) {
-  L.circleMarker([lat, lon], {
+function drawGroupStation(lat, lon, color, groupName, infoHtml, onSelect) {
+  const m = L.circleMarker([lat, lon], {
     radius: 6,
     color: '#fff',
     weight: 2,
     fillColor: color,
     fillOpacity: 1,
   }).addTo(overlayGroup);
+  return tagLayer(m, groupName, infoHtml, onSelect);
 }
 
 /**
@@ -76,6 +89,7 @@ function drawGroupStation(lat, lon, color) {
  */
 function clearOverlays() {
   overlayGroup.clearLayers();
+  groupLayers.clear();
 }
 
 /**
@@ -97,7 +111,7 @@ function drawStation(lat, lon, label, color) {
  * true straight line in lat/lon space, matching the planar intersection
  * calculation even at high zoom levels.
  */
-function drawBearingLine(lat, lon, azimuth, lineLength, color) {
+function drawBearingLine(lat, lon, azimuth, lineLength, color, groupName, infoHtml, onSelect) {
   const azRad = azimuth * Math.PI / 180;
   const sinAz = Math.sin(azRad);
   const cosAz = Math.cos(azRad);
@@ -109,19 +123,22 @@ function drawBearingLine(lat, lon, azimuth, lineLength, color) {
     const d = stepDeg * i;
     points.push([lat + d * cosAz, lon + d * sinAz]);
   }
-  const farLat = points[n][0];
-  const farLon = points[n][1];
-  L.polyline(points, {
+  const line = L.polyline(points, {
     color,
     weight: 2,
     opacity: 0.85,
   }).addTo(overlayGroup);
+  tagLayer(line, groupName, infoHtml, onSelect);
+  // Wider invisible line underneath makes the thin bearing line easier to click.
+  const hit = L.polyline(points, { color, weight: 14, opacity: 0 }).addTo(overlayGroup);
+  tagLayer(hit, groupName, infoHtml, onSelect);
+  return line;
 }
 
 /**
  * Draw estimated target as a cross marker.
  */
-function drawTarget(lat, lon, color) {
+function drawTarget(lat, lon, color, groupName, infoHtml, onSelect) {
   const style = color ? ` style="color:${color}"` : '';
   const icon = L.divIcon({
     className: '',
@@ -129,9 +146,10 @@ function drawTarget(lat, lon, color) {
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
-  L.marker([lat, lon], { icon })
-    .bindPopup(`目標: ${lat.toFixed(5)}, ${lon.toFixed(5)}`)
-    .addTo(overlayGroup);
+  const m = L.marker([lat, lon], { icon }).addTo(overlayGroup);
+  if (groupName != null) return tagLayer(m, groupName, infoHtml, onSelect);
+  m.bindPopup(`目標: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+  return m;
 }
 
 /**

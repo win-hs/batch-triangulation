@@ -302,20 +302,44 @@ function redraw(fit) {
     if (!g.visible || !g.calcStations || g.calcStations.length === 0) continue;
     const color = groupColor(g.colorIndex);
     const lineLength = computeLineLength(g.calcStations);
+    const ignored = new Set(g.ignoredIds || []);
 
     g.calcStations.forEach(s => {
-      drawGroupStation(s.lat, s.lon, color);
-      drawBearingLine(s.lat, s.lon, s.azimuth, lineLength, color);
+      const flag = ignored.has(s.id) ? '<br><i>此站無交會，已忽略</i>' : '';
+      const info =
+        `<b>${escapeHtml(g.name)} · 測站 ${s.id}</b>` +
+        `<br>座標：${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}` +
+        `<br>方位角：${s.azimuth.toFixed(1)}°${flag}`;
+      drawGroupStation(s.lat, s.lon, color, g.name, info, selectGroup);
+      drawBearingLine(s.lat, s.lon, s.azimuth, lineLength, color, g.name, info, selectGroup);
       points.push({ lat: s.lat, lon: s.lon });
     });
 
     if (g.result) {
-      drawTarget(g.result.target.lat, g.result.target.lon, color);
+      const t = g.result.target;
+      const a = g.result.minAcuteAngle;
+      const info =
+        `<b>${escapeHtml(g.name)} · 估算目標</b>` +
+        `<br>座標：${t.lat.toFixed(5)}, ${t.lon.toFixed(5)}` +
+        `<br>最小銳角：${a.value.toFixed(1)}°${a.value < 30 ? ' ⚠ 夾角過小' : ''}` +
+        `<br>使用 ${g.calcStations.length - (g.ignoredIds || []).length} / ${g.calcStations.length} 站`;
+      drawTarget(t.lat, t.lon, color, g.name, info, selectGroup);
       points.push(g.result.target);
     }
   }
 
   if (fit && points.length) fitToPoints(points);
+}
+
+// ── Map ↔ legend selection ──────────────────────────────────────────────────
+// Clicking any of a group's features on the map highlights that group's legend
+// row and scrolls it into view, so it's obvious which row the click belongs to.
+function selectGroup(name) {
+  legendListEl.querySelectorAll('.legend-row').forEach(row => {
+    row.classList.toggle('active', row.dataset.group === name);
+  });
+  const row = legendListEl.querySelector(`.legend-row[data-group="${CSS.escape(name)}"]`);
+  if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // ── Legend ───────────────────────────────────────────────────────────────
@@ -348,6 +372,7 @@ function renderLegend() {
 
     const row = document.createElement('div');
     row.className = 'legend-row';
+    row.dataset.group = g.name;
     row.innerHTML = `
       <input type="checkbox" data-name="${escapeHtml(g.name)}" ${g.visible ? 'checked' : ''}>
       <span class="legend-swatch" style="background:${color}"></span>
@@ -365,6 +390,7 @@ function renderLegend() {
 
     row.addEventListener('click', e => {
       if (e.target === chk) return;
+      selectGroup(g.name);
       fitToGroup(g);
     });
   });
