@@ -186,33 +186,7 @@
 
 .legend-detail.warn    { color: var(--md-warn, #e37400); }
 
-/* ── Mobile ─────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  /* #global-settings .radio-btn out-specifies the .radio-btn rule in style.css,
-     so the touch-target size has to be restated at the same specificity here. */
-  #global-settings .radio-btn { padding: 11px 16px; font-size: 14px; }
-  #global-settings .sub-label { font-size: 12px; }
-  #global-settings #date-input { font-size: 16px; padding: 9px 8px; }
 
-  .legend-row { padding: 11px 8px; }
-  .legend-row input[type="checkbox"] { width: 20px; height: 20px; }
-  .legend-name { font-size: 14px; }
-  .legend-detail { font-size: 12px; white-space: normal; }
-  #legend-list { max-height: none; }
-  #legend-actions { gap: 4px; flex-wrap: wrap; }
-  #legend-actions .link-btn { font-size: 13px; padding: 8px 4px; }
-  .dz-main { font-size: 15px; }
-  .dz-hint { font-size: 12px; }
-  .dz-actions { gap: 8px; }
-  .btn-download-main { height: 48px; font-size: 15px; }
-  .btn-clear-main { height: 44px; font-size: 14px; }
-  /* Column-mapping modal has to stay usable on a narrow screen */
-  #mapping-modal { padding: 10px; }
-  #mapping-box { padding: 14px; max-height: 92vh; }
-  #mapping-selectors { grid-template-columns: 1fr; gap: 8px; }
-  #mapping-selectors select { font-size: 16px; padding: 9px 8px; }
-  #mapping-actions .btn-primary, #mapping-actions .btn-secondary { height: 44px; }
-}
 .legend-detail.partial { color: #c00; }
 .legend-detail.danger  { color: #c00; font-family: system-ui, sans-serif; }
 
@@ -265,4 +239,30 @@
 }
 .btn-clear-main:hover { background: rgba(217,48,37,.08); }
 
-.btn-clear-main:hover { background: #ffecec; }
+/* ── Mobile ─────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* #global-settings .radio-btn out-specifies the .radio-btn rule in style.css,
+     so the touch-target size has to be restated at the same specificity here. */
+  #global-settings .radio-btn { padding: 11px 16px; font-size: 14px; }
+  #global-settings .sub-label { font-size: 12px; }
+  #global-settings #date-input { font-size: 16px; padding: 9px 8px; }
+
+  .legend-row { padding: 11px 8px; }
+  .legend-row input[type="checkbox"] { width: 20px; height: 20px; }
+  .legend-name { font-size: 14px; }
+  .legend-detail { font-size: 12px; white-space: normal; }
+  #legend-list { max-height: none; }
+  #legend-actions { gap: 4px; flex-wrap: wrap; }
+  #legend-actions .link-btn { font-size: 13px; padding: 8px 4px; }
+  .dz-main { font-size: 15px; }
+  .dz-hint { font-size: 12px; }
+  .dz-actions { gap: 8px; }
+  .btn-download-main { height: 48px; font-size: 15px; }
+  .btn-clear-main { height: 44px; font-size: 14px; }
+  /* Column-mapping modal has to stay usable on a narrow screen */
+  #mapping-modal { padding: 10px; }
+  #mapping-box { padding: 14px; max-height: 92vh; }
+  #mapping-selectors { grid-template-columns: 1fr; gap: 8px; }
+  #mapping-selectors select { font-size: 16px; padding: 9px 8px; }
+  #mapping-actions .btn-primary, #mapping-actions .btn-secondary { height: 44px; }
+}
