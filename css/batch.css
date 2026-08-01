@@ -201,26 +201,31 @@
   width: 100%;
   padding: 11px;
   border: none;
-  border-radius: 6px;
-  background: #2f6db0;
+  border-radius: var(--radius, 12px);
+  background: var(--gradient, linear-gradient(135deg, #0052FF, #4D7CFF));
   color: #fff;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.06));
+  transition: all .2s ease-out;
 }
 
-.btn-download-main:hover { background: #255a93; }
+.btn-download-main:hover { box-shadow: var(--shadow-accent, 0 4px 14px rgba(0,82,255,.25)); transform: translateY(-1px); filter: brightness(1.05); }
+.btn-download-main:active { transform: scale(.98); }
 
 .btn-clear-main {
   width: 100%;
   padding: 9px;
   border: 1px solid #d33;
-  border-radius: 6px;
+  border-radius: var(--radius, 12px);
   background: #fff;
   color: #c00;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: box-shadow .2s ease-out;
 }
+.btn-clear-main:hover { box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.06)); }
 
 .btn-clear-main:hover { background: #ffecec; }
